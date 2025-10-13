@@ -3,11 +3,12 @@ from evento import Evento
 from participante import Participante
 
 class SistemaEventos:
-    
+    """Regras de negócio (Sprint 1 + 2) + persistência (Sprint 3)."""
+
     def __init__(self, repo):
         self._repo = repo
 
-    
+    # ---------- Sprint 1 ----------
     def criar_evento(self, nome, data_evento, local, capacidade_max, categoria, preco):
         if data_evento < date.today():
             return False, "A data do evento não pode ser anterior à data atual."
@@ -33,7 +34,7 @@ class SistemaEventos:
             self._repo.salvar_evento(evento)
         return ok, msg
 
-   
+    # ---------- Sprint 2 ----------
     def cancelar_inscricao(self, id_evento: int, email: str):
         evento = self.obter_evento(id_evento)
         if not evento:
@@ -52,20 +53,29 @@ class SistemaEventos:
             self._repo.salvar_evento(evento)
         return ok, msg
 
-    def relatorio_total_inscritos(self, id_evento: int) -> (bool, str | int):
+    def relatorio_total_inscritos(self, id_evento: int):
         evento = self.obter_evento(id_evento)
         if not evento:
             return False, "Evento não encontrado."
         return True, evento.total_inscritos()
 
     def relatorio_eventos_com_vagas(self):
-        # retorna lista de eventos com vagas > 0
         return [e for e in self.listar_eventos() if e.vagas_disponiveis > 0]
 
-    def relatorio_receita_evento(self, id_evento: int) -> (bool, str | float):
+    def relatorio_receita_evento(self, id_evento: int):
         evento = self.obter_evento(id_evento)
         if not evento:
             return False, "Evento não encontrado."
         return True, evento.receita_total()
+
+    # ---------- Sprint 3: persistência ----------
+    def carregar(self):
+        if hasattr(self._repo, "carregar"):
+            self._repo.carregar()
+
+    def salvar(self):
+        if hasattr(self._repo, "salvar"):
+            self._repo.salvar()
+
 
 
