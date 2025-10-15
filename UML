@@ -1,0 +1,102 @@
+classDiagram
+    direction TB
+    
+    %% Camada de Lógica de Negócio (Domínio)
+    class Evento {
+        - id: int
+        - nome: str
+        - data_evento: date
+        - local: str
+        - capacidade_max: int
+        - categoria: str
+        - preco: float
+        - inscritos: list
+        - inscritos_emails: set
+        - checkins: set
+        + vagas_disponiveis() int
+        + inscrever(p: Participante) tuple
+        + cancelar_inscricao(email: str) tuple
+        + checkin(email: str) tuple
+        + total_inscritos() int
+        + receita_total() float
+        + to_dict() dict
+        + from_dict(dict) Evento
+    }
+    
+    class Participante {
+        - nome: str
+        - email: str
+        + to_dict() dict
+        + from_dict(dict) Participante
+    }
+    
+    class SistemaEventos {
+        - repo: Repository
+        + criar_evento(...) tuple
+        + listar_eventos() list
+        + obter_evento(id: int) Evento
+        + inscrever(id: int, p: Participante) tuple
+        + cancelar_inscricao(id: int, email: str) tuple
+        + checkin(id: int, email: str) tuple
+        + relatorio_total_inscritos(id: int) tuple
+        + relatorio_eventos_com_vagas() list
+        + relatorio_receita_evento(id: int) tuple
+        + carregar()
+        + salvar()
+    }
+
+    %% Camada de Persistência (Repositório)
+    class Repository {
+        <<interface>>
+        + proximo_id() int
+        + salvar_evento(evento: Evento)
+        + buscar_evento(id: int) Evento
+        + todos_eventos() list
+        + carregar()
+        + salvar()
+    }
+    
+    class MemoryRepo {
+        - _eventos: dict
+        - _seq: int
+        + proximo_id() int
+        + salvar_evento(evento: Evento)
+        + buscar_evento(id: int) Evento
+        + todos_eventos() list
+    }
+    
+    class JsonRepo {
+        - _filepath: str
+        - _eventos: dict
+        - _seq: int
+        + proximo_id() int
+        + salvar_evento(evento: Evento)
+        + buscar_evento(id: int) Evento
+        + todos_eventos() list
+        + carregar()
+        + salvar()
+    }
+    
+    %% Camada de Interface
+    class Main {
+        - sistema: SistemaEventos
+        + main()
+    }
+    
+    class Menu {
+        + run_menu(sistema: SistemaEventos)
+    }
+
+    %% Relacionamentos
+    SistemaEventos ..> Evento
+    SistemaEventos ..> Participante
+    SistemaEventos ..> Repository : injeta
+    Evento "1" -- "0..*" Participante : inscritos
+    Main ..> SistemaEventos
+    Main ..> JsonRepo
+    Main ..> MemoryRepo
+    Menu ..> SistemaEventos
+    Repository <|.. MemoryRepo
+    Repository <|.. JsonRepo
+    JsonRepo --> Evento
+    JsonRepo --> Participante
