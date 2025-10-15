@@ -1,65 +1,63 @@
-import json, os
-from evento import Evento
+import json, os                               # json para ler/gravar, os para checar arquivo/pasta
+from evento import Evento                      # classe base
+from workshop import Workshop                  # subclasse Workshop
+from palestra import Palestra                  # subclasse Palestra
 
 class JsonRepo:
-    """Repositório que usa um arquivo JSON para persistência de dados."""
-    def __init__(self, filepath: str = "data.json"):
-        self._filepath = filepath
-        self._eventos = {}   # Dicionário para armazenar eventos em memória (id -> Evento).
-        self._seq = 1        # Sequência para gerar novos IDs.
+    """Repositório com persistência em JSON para eventos e inscrições (suporta subclasses)."""
+    def __init__(self, filepath: str = "data.json"):  # recebe caminho do arquivo JSON
+        self._filepath = filepath                      # salva caminho
+        self._eventos = {}                             # dict id -> Evento
+        self._seq = 1                                  # gerador de ID (contador simples)
 
-    def proximo_id(self) -> int:
-        """Gera e retorna um novo ID sequencial."""
-        nid = self._seq
-        self._seq += 1
-        return nid
+    # ---------- identidade ----------
+    def proximo_id(self) -> int:                       # gera um novo ID
+        nid = self._seq                                # pega valor atual
+        self._seq += 1                                 # incrementa contador
+        return nid                                     # retorna ID
 
-    # ---------- MÉTODOS CRUD (Create, Read, Update, Delete) ----------
-    def salvar_evento(self, evento: Evento) -> None:
-        """Salva ou atualiza um evento no dicionário em memória."""
-        self._eventos[evento.id] = evento
+    # ---------- CRUD ----------
+    def salvar_evento(self, evento: Evento) -> None:   # salva/atualiza evento em memória
+        self._eventos[evento.id] = evento              # guarda no dicionário
 
-    def buscar_evento(self, id_evento: int):
-        """Busca um evento pelo ID."""
-        return self._eventos.get(id_evento)
+    def buscar_evento(self, id_evento: int):           # busca por ID
+        return self._eventos.get(id_evento)            # retorna evento ou None
 
-    def todos_eventos(self):
-        """Retorna uma lista de todos os eventos."""
-        return list(self._eventos.values())
+    def todos_eventos(self):                           # retorna lista de todos
+        return list(self._eventos.values())            # converte dict->lista
 
-    # ---------- MÉTODOS DE PERSISTÊNCIA (ARQUIVO) ----------
-    def carregar(self) -> None:
-        """Lê o arquivo JSON e carrega os dados para a memória."""
-        if not os.path.exists(self._filepath):
-            # Cria o diretório e o arquivo se não existirem.
-            if os.path.dirname(self._filepath):
-                os.makedirs(os.path.dirname(self._filepath), exist_ok=True)
-            self._grava_arquivo({"seq": 1, "eventos": []})
-            return
+    # ---------- persistência ----------
+    def carregar(self) -> None:                        # carrega JSON para memória
+        # cria arquivo/pasta se ainda não existem
+        if not os.path.exists(self._filepath):         # se arquivo não existe
+            if os.path.dirname(self._filepath):        # se há diretório na rota
+                os.makedirs(os.path.dirname(self._filepath), exist_ok=True)  # cria pasta
+            self._grava_arquivo({"seq": 1, "eventos": []})  # grava JSON inicial
+        data = self._le_arquivo()                      # lê JSON
+        self._seq = int(data.get("seq", 1))            # recupera contador
+        self._eventos = {}                             # zera memória
+        for e in data.get("eventos", []):              # percorre lista de eventos
+            tipo = (e.get("tipo") or "evento").lower() # lê tipo salvo
+            if tipo == "workshop":                     # reconstrói Workshop
+                ev = Workshop.from_dict(e)             # usa fábrica da subclasse
+            elif tipo == "palestra":                   # reconstrói Palestra
+                ev = Palestra.from_dict(e)             # usa fábrica da subclasse
+            else:                                      # caso contrário Evento
+                ev = Evento.from_dict(e)               # usa fábrica base
+            self._eventos[ev.id] = ev                  # guarda reconstruído
 
-        data = self._le_arquivo()
-        self._seq = int(data.get("seq", 1))
-        self._eventos = {}
-        # Converte cada dicionário de evento de volta para um objeto Evento.
-        for e_dict in data.get("eventos", []):
-            ev = Evento.from_dict(e_dict)
-            self._eventos[ev.id] = ev
-
-    def salvar(self) -> None:
-        """Converte todos os eventos para dicionários e salva no arquivo JSON."""
-        payload = {
-            "seq": self._seq,
-            "eventos": [e.to_dict() for e in self._eventos.values()]
+    def salvar(self) -> None:                          # grava memória no JSON
+        payload = {                                    # monta objeto raiz
+            "seq": self._seq,                          # salva contador
+            "eventos": [e.to_dict() for e in self._eventos.values()]  # mapeia cada evento -> dict
         }
-        self._grava_arquivo(payload)
+        self._grava_arquivo(payload)                   # grava no arquivo
 
-    # ---------- MÉTODOS AUXILIARES DE ARQUIVO ----------
-    def _le_arquivo(self):
-        """Abre e lê o conteúdo do arquivo JSON."""
-        with open(self._filepath, "r", encoding="utf-8") as f:
-            return json.load(f)
+    # ---------- util ----------
+    def _le_arquivo(self):                             # helper para ler JSON
+        with open(self._filepath, "r", encoding="utf-8") as f:  # abre arquivo
+            return json.load(f)                        # carrega JSON
 
-    def _grava_arquivo(self, obj):
-        """Escreve um objeto Python no arquivo JSON de forma formatada."""
-        with open(self._filepath, "w", encoding="utf-8") as f:
-            json.dump(obj, f, ensure_ascii=False, indent=2)
+    def _grava_arquivo(self, obj):                     # helper para gravar JSON
+        with open(self._filepath, "w", encoding="utf-8") as f:  # abre arquivo
+            json.dump(obj, f, ensure_ascii=False, indent=2)     # salva com identação
