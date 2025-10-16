@@ -39,8 +39,6 @@ def run_menu(sistema):                             # loop principal do menu
 
     while True:                                      # loop infinito até sair
         print("\n================================")  # separador
-        print(" (com Workshop & Palestra)")           # subtítulo
-        print("================================")     # separador
         for k in sorted(opcoes.keys()):               # lista opções
             print(f" {k}) {opcoes[k][0]}")            # imprime linha
         esc = input("\nSelecione uma opção: ").strip()  # lê escolha
@@ -149,4 +147,5 @@ def _relatorios(sistema):                                # submenu de relatório
             print(f"Receita total: R$ {resp:,.2f}" if ok else "❌ " + str(resp))  # resultado
         else:
             print("⚠️  Opção inválida.")                 # inválido
+
 
