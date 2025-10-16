@@ -39,7 +39,6 @@ def run_menu(sistema):                             # loop principal do menu
 
     while True:                                      # loop infinito até sair
         print("\n================================")  # separador
-        print(" Sistema de Eventos — Sprint 3*")      # título
         print(" (com Workshop & Palestra)")           # subtítulo
         print("================================")     # separador
         for k in sorted(opcoes.keys()):               # lista opções
@@ -150,3 +149,4 @@ def _relatorios(sistema):                                # submenu de relatório
             print(f"Receita total: R$ {resp:,.2f}" if ok else "❌ " + str(resp))  # resultado
         else:
             print("⚠️  Opção inválida.")                 # inválido
+
